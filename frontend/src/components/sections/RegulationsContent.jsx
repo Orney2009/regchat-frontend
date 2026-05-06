@@ -1,48 +1,63 @@
-const regulationCards = [
-  {
-    category: "Loi de Base",
-    icon: "description",
-    title: "Code de l'Urbanisme - Loi n° 2013-01",
-    description:
-      "Cadre législatif fondamental définissant les règles d'utilisation du sol, la planification urbaine et les régimes d'autorisation.",
-  },
-  {
-    category: "Construction",
-    icon: "architecture",
-    title: "Code de la Construction et de l'Habitation",
-    description:
-      "Normes techniques de sécurité, d'accessibilité et de performance énergétique pour les bâtiments résidentiels et publics.",
-  },
-  {
-    category: "Aménagement",
-    icon: "landscape",
-    title: "Loi n° 2018-10 sur l'Aménagement du Territoire",
-    description:
-      "Définition des orientations stratégiques pour le développement équilibré des régions et la protection des espaces naturels.",
-  },
-  {
-    category: "Foncier",
-    icon: "home_work",
-    title: "Code Foncier et Domanial - Loi 2013-01",
-    description:
-      "Dispositions relatives à la propriété foncière, à la gestion du domaine de l'État et aux procédures d'immatriculation.",
-  },
-  {
-    category: "Décret Public",
-    icon: "gavel",
-    title: "Décret sur les Établissements Classés",
-    description:
-      "Réglementation spécifique aux industries et activités pouvant présenter des dangers ou inconvénients pour le voisinage.",
-  },
-];
+import { useEffect, useState } from "react";
+import { getRegulations } from "../../utils/regulationsService";
 
 const RegulationsContent = () => {
+  const [items, setItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [activeFilter, setActiveFilter] = useState("loi");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await getRegulations();
+        // Map backend fields to card fields
+        const mapped = (data || []).map((r) => ({
+          id: r.id || r.title,
+          category: r.domain || "",
+          title: r.title || "",
+          description: r.description || "",
+          doc_type: r.doc_type || "",
+          icon: r.icon || "description",
+          url: r.url || "#",
+        }));
+        if (!mounted) return;
+        setItems(mapped);
+        // apply default filter (loi)
+        setFilteredItems(mapped.filter((m) => m.doc_type === "loi"));
+      } catch (err) {
+        if (!mounted) return;
+        setError(err?.message || String(err));
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleFilter = (filter) => {
+    setActiveFilter(filter);
+    if (!filter) {
+      setFilteredItems(items);
+      return;
+    }
+    setFilteredItems(items.filter((i) => i.doc_type === filter));
+  };
+
   return (
     <div className="max-w-[1200px] mx-auto w-full px-lg py-xl">
       <div className="mb-lg">
-        <h2 className="font-h1 text-h1 text-primary mb-xs">Répertoire Réglementaire</h2>
+        <h2 className="font-h1 text-h1 text-primary mb-xs flex flex-start">Répertoire Réglementaire</h2>
         <div className="h-1 w-24 bg-secondary rounded-full"></div>
-        <p className="font-body-lg text-body-lg text-on-surface-variant mt-md max-w-2xl">
+        <p className="font-body-lg text-body-lg text-on-surface-variant mt-md max-w-2xl text-left">
           Accédez à l'ensemble des textes juridiques régissant l'urbanisme, l'aménagement du territoire et la construction en République du Bénin.
         </p>
       </div>
@@ -102,59 +117,90 @@ const RegulationsContent = () => {
       </div>
 
       <div className="flex border-b border-outline-variant mb-lg space-x-xl overflow-x-auto">
-        <button className="pb-md border-b-2 border-primary font-label-bold text-sm text-primary uppercase tracking-widest whitespace-nowrap">
-          Codes Nationaux
+        <button
+          onClick={() => handleFilter("loi")}
+          className={`pb-md border-b-2 uppercase tracking-widest whitespace-nowrap font-label-bold text-sm ${
+            activeFilter === "loi"
+              ? "border-primary text-primary"
+              : "border-transparent text-outline hover:text-primary transition-colors"
+          }`}
+        >
+          Lois
         </button>
-        <button className="pb-md border-b-2 border-transparent font-label-bold text-sm text-outline hover:text-primary transition-colors uppercase tracking-widest whitespace-nowrap">
+        <button
+          onClick={() => handleFilter("decret")}
+          className={`pb-md border-b-2 uppercase tracking-widest whitespace-nowrap font-label-bold text-sm ${
+            activeFilter === "decret"
+              ? "border-primary text-primary"
+              : "border-transparent text-outline hover:text-primary transition-colors"
+          }`}
+        >
           Décrets
         </button>
-        <button className="pb-md border-b-2 border-transparent font-label-bold text-sm text-outline hover:text-primary transition-colors uppercase tracking-widest whitespace-nowrap">
-          Réglementations Locales
+        <button
+          onClick={() => handleFilter("arrete")}
+          className={`pb-md border-b-2 uppercase tracking-widest whitespace-nowrap font-label-bold text-sm ${
+            activeFilter === "arrete"
+              ? "border-primary text-primary"
+              : "border-transparent text-outline hover:text-primary transition-colors"
+          }`}
+        >
+          Arrêtés
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
-        {regulationCards.map((card) => (
-          <div
-            key={card.title}
-            className="bg-surface-container-lowest border border-outline-variant hover:border-primary-container transition-all hover:shadow-lg group flex flex-col"
-          >
-            <div className="h-1 bg-secondary w-1/4 group-hover:w-full transition-all duration-300"></div>
-            <div className="p-lg flex-1">
-              <div className="flex justify-between items-start mb-md">
-                <span className="text-[10px] font-label-bold text-secondary uppercase tracking-tighter">{card.category}</span>
-                <span className="material-symbols-outlined text-outline text-md" data-icon={card.icon}>
-                  {card.icon}
+        {isLoading ? (
+          <div className="col-span-full text-center py-md">Chargement...</div>
+        ) : error ? (
+          <div className="col-span-full text-center text-negative py-md">Erreur: {error}</div>
+        ) : (
+          <> 
+            {filteredItems.map((card) => (
+              <div
+                key={card.id}
+                className="bg-surface-container-lowest border border-outline-variant hover:border-primary-container transition-all hover:shadow-lg group flex flex-col"
+              >
+                <div className="h-1 bg-secondary w-1/4 group-hover:w-full transition-all duration-300"></div>
+                <div className="p-lg flex-1">
+                  <div className="flex justify-between items-start mb-md">
+                    <span className="text-[10px] font-label-bold text-secondary uppercase tracking-tighter">{card.category}</span>
+                    <span className="material-symbols-outlined text-outline text-md" data-icon={card.icon}>
+                      {card.icon}
+                    </span>
+                  </div>
+                  <h4 className="font-h3 text-body-lg text-primary mb-sm">{card.title}</h4>
+                  <p className="text-on-surface-variant font-body-md text-sm mb-lg line-clamp-3">{card.description}</p>
+                </div>
+                <div className="p-lg pt-0">
+                  <button
+                  onClick={() => window.open(card.url, "_blank")}
+                  className="w-full bg-primary text-white py-sm font-label-bold text-xs uppercase tracking-widest hover:bg-primary-container transition-colors">
+                    Consulter
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            <div className="bg-secondary-container/10 border-2 border-dashed border-secondary/30 p-lg flex flex-col items-center justify-center text-center">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-md shadow-sm">
+                <span className="material-symbols-outlined text-secondary" data-icon="cloud_download">
+                  cloud_download
                 </span>
               </div>
-              <h4 className="font-h3 text-body-lg text-primary mb-sm">{card.title}</h4>
-              <p className="text-on-surface-variant font-body-md text-sm mb-lg line-clamp-3">{card.description}</p>
-            </div>
-            <div className="p-lg pt-0">
-              <button className="w-full bg-primary text-white py-sm font-label-bold text-xs uppercase tracking-widest hover:bg-primary-container transition-colors">
-                Consulter
+              <h4 className="font-h3 text-body-md text-on-secondary-container mb-xs">Bibliothèque Complète</h4>
+              <p className="text-caption text-on-secondary-container mb-lg">
+                Téléchargez l'intégralité du répertoire juridique en format compressé.
+              </p>
+              <button className="text-secondary font-label-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:underline">
+                Tout télécharger (PDF)
+                <span className="material-symbols-outlined text-sm" data-icon="chevron_right">
+                  chevron_right
+                </span>
               </button>
             </div>
-          </div>
-        ))}
-
-        <div className="bg-secondary-container/10 border-2 border-dashed border-secondary/30 p-lg flex flex-col items-center justify-center text-center">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mb-md shadow-sm">
-            <span className="material-symbols-outlined text-secondary" data-icon="cloud_download">
-              cloud_download
-            </span>
-          </div>
-          <h4 className="font-h3 text-body-md text-on-secondary-container mb-xs">Bibliothèque Complète</h4>
-          <p className="text-caption text-on-secondary-container mb-lg">
-            Téléchargez l'intégralité du répertoire juridique en format compressé.
-          </p>
-          <button className="text-secondary font-label-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:underline">
-            Tout télécharger (PDF)
-            <span className="material-symbols-outlined text-sm" data-icon="chevron_right">
-              chevron_right
-            </span>
-          </button>
-        </div>
+          </>
+        )}
       </div>
 
       <div className="my-xl flex items-center">
