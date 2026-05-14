@@ -2,7 +2,7 @@ import { API_CONFIG } from "../config/env";
 
 export async function getRegulations() {
   const base = API_CONFIG.baseUrl.replace(/\/$/, "");
-  const url = `${base}/regulations`;
+  const url = `${base}/regulations/`;
 
   try {
     const res = await fetch(url, {

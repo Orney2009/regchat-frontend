@@ -1,4 +1,5 @@
 import Button from "../ui/Button";
+import logo from "../../assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { useChat } from "../../context/ChatContext";
 
@@ -32,7 +33,7 @@ const SideNavBar = ({ activeLabel = null }) => {
 
   const handleNewConsultation = () => {
     resetConversation();
-    navigate("/");
+    navigate("/chat");
   };
 
   const navItems = [
@@ -43,18 +44,19 @@ const SideNavBar = ({ activeLabel = null }) => {
   ];
 
   const helpItems = [
-    { icon: "help", label: "Help Center" },
+    { icon: "person", label: "Mon compte" },
+    { icon: "help", label: "Centre d'aide" },
   ];
 
   return (
     <aside className="bg-stone-50 dark:bg-stone-900 text-primary dark:text-emerald-400 font-sans text-xs uppercase font-semibold tracking-widest hidden md:flex flex-col h-screen w-70 border-r border-stone-200 dark:border-stone-800 py-6">
       {/* Header */}
-      <div className="px-6 mb-10">
+      <div className="px-6 mb-10 cursor-pointer" onClick={() => navigate("/")}>
         <div className="flex items-center gap-3 mb-2">
           <img
             alt="Government Seal"
             className="w-8 h-8 rounded-sm object-cover"
-            src="../../assets/logo.png"
+            src={logo}
           />
           <h1 className="text-lg font-black text-primary dark:text-emerald-400">
             RegChat

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getRegulations } from "../../utils/regulationsService";
+import Pagination from "../ui/Pagination";
 
 const RegulationsContent = () => {
   const [items, setItems] = useState([]);
@@ -7,6 +8,8 @@ const RegulationsContent = () => {
   const [activeFilter, setActiveFilter] = useState("loi");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     let mounted = true;
@@ -45,6 +48,7 @@ const RegulationsContent = () => {
 
   const handleFilter = (filter) => {
     setActiveFilter(filter);
+    setCurrentPage(1); // Reset to page 1 when filter changes
     if (!filter) {
       setFilteredItems(items);
       return;
@@ -154,9 +158,14 @@ const RegulationsContent = () => {
           <div className="col-span-full text-center py-md">Chargement...</div>
         ) : error ? (
           <div className="col-span-full text-center text-negative py-md">Erreur: {error}</div>
-        ) : (
-          <> 
-            {filteredItems.map((card) => (
+        ) : (() => {
+          // Calculate pagination
+          const startIndex = (currentPage - 1) * itemsPerPage;
+          const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+          
+          return (
+            <> 
+              {paginatedItems.map((card) => (
               <div
                 key={card.id}
                 className="bg-surface-container-lowest border border-outline-variant hover:border-primary-container transition-all hover:shadow-lg group flex flex-col"
@@ -199,9 +208,19 @@ const RegulationsContent = () => {
                 </span>
               </button>
             </div>
-          </>
-        )}
+            </>
+          );
+        })()}
       </div>
+
+      {/* Pagination Controls */}
+      {!isLoading && !error && filteredItems.length > 0 && (
+        <Pagination 
+          currentPage={currentPage} 
+          totalPages={Math.ceil(filteredItems.length / itemsPerPage)} 
+          onPageChange={setCurrentPage} 
+        />
+      )}
 
       <div className="my-xl flex items-center">
         <div className="flex-1 h-px bg-outline-variant"></div>
