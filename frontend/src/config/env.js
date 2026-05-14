@@ -3,6 +3,15 @@ export const API_CONFIG = {
   baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1",
 };
 
+export const SUPABASE_CONFIG = {
+  url: import.meta.env.VITE_SUPABASE_URL || "",
+  anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || "",
+};
+
+export const hasSupabaseConfig = Boolean(
+  SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey,
+);
+
 export const CHAT_CONFIG = {
   country: import.meta.env.VITE_CHAT_COUNTRY || "BEN",
   domain: import.meta.env.VITE_CHAT_DOMAIN || "urbanisme",

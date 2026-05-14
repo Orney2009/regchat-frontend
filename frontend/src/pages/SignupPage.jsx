@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import HomeTopNav from "../components/sections/home/HomeTopNav";
 
 const signupBenefits = [
@@ -31,6 +33,91 @@ const countries = [
 const footerLinks = ["Mentions Légales", "Confidentialité", "Contact"];
 
 const SignupPage = () => {
+  const { signUp, isSupabaseEnabled } = useAuth();
+  const [form, setForm] = useState({
+    lastName: "",
+    firstName: "",
+    email: "",
+    country: "BJ",
+    password: "",
+    confirmPassword: "",
+    acceptedTerms: false,
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const updateField = (field) => (event) => {
+    const value =
+      field === "acceptedTerms" ? event.target.checked : event.target.value;
+
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    if (!isSupabaseEnabled) {
+      setErrorMessage(
+        "Configuration Supabase manquante. Ajoutez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY.",
+      );
+      return;
+    }
+
+    if (!form.lastName || !form.firstName || !form.email || !form.password) {
+      setErrorMessage("Tous les champs obligatoires doivent être remplis.");
+      return;
+    }
+
+    if (!form.acceptedTerms) {
+      setErrorMessage("Veuillez accepter les conditions d'utilisation.");
+      return;
+    }
+
+    if (form.password.length < 8) {
+      setErrorMessage("Le mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setErrorMessage("La confirmation du mot de passe ne correspond pas.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await signUp({
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        metadata: {
+          first_name: form.firstName.trim(),
+          last_name: form.lastName.trim(),
+          country: form.country,
+        },
+      });
+
+      setSuccessMessage(
+        "Compte créé. Vérifiez votre e-mail pour confirmer l'inscription.",
+      );
+      setForm((prev) => ({
+        ...prev,
+        password: "",
+        confirmPassword: "",
+      }));
+    } catch (error) {
+      setErrorMessage(error?.message || "Erreur lors de l'inscription.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-surface text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
       <HomeTopNav />
@@ -75,22 +162,38 @@ const SignupPage = () => {
               </span>
             </div>
 
-            <form className="space-y-lg">
+            <form className="space-y-lg" onSubmit={handleSubmit}>
+              {errorMessage && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-md py-sm text-sm text-red-700">
+                  {errorMessage}
+                </div>
+              )}
+
+              {successMessage && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-md py-sm text-sm text-emerald-700">
+                  {successMessage}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
                 <div className="flex flex-col gap-xs">
                   <label className="font-label-bold text-label-bold text-on-surface-variant">Nom</label>
                   <input
                     className="w-full p-md border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary transition-all bg-surface-bright outline-none font-body-md"
+                    onChange={updateField("lastName")}
                     placeholder="Ex: AHOUANVOEDO"
                     type="text"
+                    value={form.lastName}
                   />
                 </div>
                 <div className="flex flex-col gap-xs">
                   <label className="font-label-bold text-label-bold text-on-surface-variant">Prénom</label>
                   <input
                     className="w-full p-md border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary transition-all bg-surface-bright outline-none font-body-md"
+                    onChange={updateField("firstName")}
                     placeholder="Ex: Koffi"
                     type="text"
+                    value={form.firstName}
                   />
                 </div>
               </div>
@@ -99,14 +202,20 @@ const SignupPage = () => {
                 <label className="font-label-bold text-label-bold text-on-surface-variant">Adresse Email</label>
                 <input
                   className="w-full p-md border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary transition-all bg-surface-bright outline-none font-body-md"
+                  onChange={updateField("email")}
                   placeholder="nom.prenom@exemple.bj"
                   type="email"
+                  value={form.email}
                 />
               </div>
 
               <div className="flex flex-col gap-xs">
                 <label className="font-label-bold text-label-bold text-on-surface-variant">Pays de résidence</label>
-                <select className="w-full p-md border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary transition-all bg-surface-bright outline-none font-body-md appearance-none">
+                <select
+                  className="w-full p-md border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary transition-all bg-surface-bright outline-none font-body-md appearance-none"
+                  onChange={updateField("country")}
+                  value={form.country}
+                >
                   {countries.map(([code, label]) => (
                     <option key={code} value={code}>
                       {label}
@@ -120,32 +229,42 @@ const SignupPage = () => {
                   <label className="font-label-bold text-label-bold text-on-surface-variant">Mot de passe</label>
                   <input
                     className="w-full p-md border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary transition-all bg-surface-bright outline-none font-body-md"
+                    onChange={updateField("password")}
                     placeholder="••••••••"
                     type="password"
+                    value={form.password}
                   />
                 </div>
                 <div className="flex flex-col gap-xs">
                   <label className="font-label-bold text-label-bold text-on-surface-variant">Confirmation</label>
                   <input
                     className="w-full p-md border border-outline-variant rounded-lg focus:border-primary focus:ring-1 focus:ring-primary transition-all bg-surface-bright outline-none font-body-md"
+                    onChange={updateField("confirmPassword")}
                     placeholder="••••••••"
                     type="password"
+                    value={form.confirmPassword}
                   />
                 </div>
               </div>
 
               <div className="flex items-start gap-md pt-sm">
-                <input className="mt-1 rounded border-outline-variant accent-primary focus:ring-primary" type="checkbox" />
+                <input
+                  checked={form.acceptedTerms}
+                  className="mt-1 rounded border-outline-variant accent-primary focus:ring-primary"
+                  onChange={updateField("acceptedTerms")}
+                  type="checkbox"
+                />
                 <p className="font-caption text-caption text-on-surface-variant">
                   J'accepte les <a className="text-secondary underline" href="#">conditions générales d'utilisation</a> et la politique de protection des données personnelles du Ministère du Cadre de Vie.
                 </p>
               </div>
 
               <button
-                className="w-full bg-primary text-white py-md rounded-lg font-label-bold text-label-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-[0_4px_2px_rgba(1,45,29,0.1)]"
+                className="w-full bg-primary text-white py-md rounded-lg font-label-bold text-label-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-[0_4px_2px_rgba(1,45,29,0.1)] disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={isSubmitting}
                 type="submit"
               >
-                CRÉER MON COMPTE
+                {isSubmitting ? "CRÉATION EN COURS..." : "CRÉER MON COMPTE"}
               </button>
 
               <div className="flex items-center gap-md py-md">

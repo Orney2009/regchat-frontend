@@ -1,4 +1,5 @@
 import { API_CONFIG, CHAT_CONFIG } from "../config/env";
+import { fetchWithAuth } from "./apiClient";
 
 export const sendChatMessage = async (question, conversationId = null) => {
   const payload = {
@@ -14,11 +15,8 @@ export const sendChatMessage = async (question, conversationId = null) => {
   }
 
   try {
-    const response = await fetch(`${API_CONFIG.baseUrl}/chat/`, {
+    const response = await fetchWithAuth(`${API_CONFIG.baseUrl}/chat/`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(payload),
     });
 

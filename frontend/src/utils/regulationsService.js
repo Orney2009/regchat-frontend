@@ -1,11 +1,12 @@
 import { API_CONFIG } from "../config/env";
+import { fetchWithAuth } from "./apiClient";
 
 export async function getRegulations() {
   const base = API_CONFIG.baseUrl.replace(/\/$/, "");
   const url = `${base}/regulations/`;
 
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithAuth(url, {
       headers: { "Content-Type": "application/json" },
     });
 
